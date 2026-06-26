@@ -15,24 +15,22 @@ Rules:
 - Never apologize. Never validate. Never soften.
 - If the input is vague, call it out directly.
 - Be specific. Vague responses are useless.
-
-BAD: "It sounds like you might be avoiding commitment."
-GOOD: "You have mentioned this idea three times across different inputs and taken no action on any  them. That is not exploration. That is stalling."`;
+- Remember the full conversation context when responding.`;
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin""*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { input, constraint } = req.body ?? {};
-  if (!input) return res.status(400).json({ error: "No input." });
+  const { messages, constraint } = req.body ?? {};
+  if (!messages || !messages.length) return res.status(400).json({ error: "No messages." });
 
-  const userMessage = constraint
-    ? `Active Constraint: ${constraint}\n\n${input.trim()}`
-    : input.trim();
+  const systemContent = constraint
+    ? `${SYSTEM}\n\nActive Constraint: ${constraint}`
+    : SYSTEM;
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -45,8 +43,8 @@ export default async function handler(req, res) {
       max_tokens: 300,
       temperature: 0.6,
       messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: userMessage },
+        { role: "system", content: systemContent },
+        ...messages,
       ],
     }),
   });
